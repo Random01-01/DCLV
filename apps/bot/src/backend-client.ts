@@ -9,6 +9,19 @@ import type { BotConfig } from './config.js';
 export class BackendClient {
   public constructor(private readonly config: BotConfig) {}
 
+  public async waitUntilReady(maxAttempts = 60): Promise<void> {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const response = await fetch(`${this.config.backendUrl}/healthz`, { signal: AbortSignal.timeout(2_000) });
+        if (response.ok) return;
+      } catch {
+        // Compose may start the bot before Fastify is ready; retry without logging secrets.
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    }
+    throw new Error('backend_startup_timeout');
+  }
+
   public async createRoom(guildId: string, hostDiscordId: string, preset: Preset): Promise<InternalCreateRoomResponse> {
     return this.request<InternalCreateRoomResponse>('/internal/rooms', {
       method: 'POST',

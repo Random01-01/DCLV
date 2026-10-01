@@ -116,6 +116,7 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isChatInputCommand()) await handleCommand(interaction);
 });
 
+await backend.waitUntilReady();
 const rest = new REST({ version: '10' }).setToken(config.token);
 await rest.put(
   config.guildId ? Routes.applicationGuildCommands(config.clientId, config.guildId) : Routes.applicationCommands(config.clientId),

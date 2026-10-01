@@ -4,6 +4,8 @@
 
 O host executa o stack completo na própria máquina. O Discord funciona como a camada de autorização e distribuição de links temporários; nenhum vídeo passa pelo canal de voz do Discord.
 
+Depois da configuração inicial, a experiência do usuário é **sem código**: o bot é convidado para o servidor, o host executa `/iniciar-stream` no chat, clica no link recebido e escolhe **Compartilhar tela** no navegador. Viewers apenas usam `/entrar-stream` e abrem o link privado.
+
 > **Estado do projeto:** MVP funcional para uso em LAN/VPN e base de produção para internet. A mídia é peer-to-peer entre o host e cada viewer, mas sempre negociada através de TURN. A qualidade final depende do navegador, GPU, CPU, upload do host e configuração de NAT.
 
 ## O que este repositório entrega
@@ -70,7 +72,18 @@ git pull --ff-only origin main
 5. Instale o bot no servidor de teste.
 6. Copie o ID do servidor com o modo desenvolvedor do Discord ativo. Definir `DISCORD_GUILD_ID` faz os comandos aparecerem rapidamente; vazio registra comandos globais.
 
-### 3. Configure segredos e endereço
+### 3. Configure o bot sem editar código
+
+O caminho recomendado é o assistente interativo. Ele gera os três segredos, grava `.env` com permissão restrita e imprime o link de convite do bot:
+
+```bash
+npm install
+npm run setup
+```
+
+O assistente pede apenas Application ID, Bot Token, servidor de teste e endereço do host. Abra o **Convite do bot** exibido e selecione o servidor no Discord. Nenhum usuário final precisará instalar dependências ou alterar código.
+
+Se preferir configurar manualmente:
 
 ```bash
 cp .env.example .env
@@ -109,6 +122,19 @@ docker compose logs -f backend bot
 O web app fica em `http://IP_DA_MAQUINA:8080`. O health check do backend fica em `http://IP_DA_MAQUINA:3000/healthz` somente se a porta for publicada manualmente; por padrão ele fica acessível apenas dentro da rede Docker.
 
 > O serviço renderiza `turn/turnserver.conf` com os valores do `.env` ao iniciar. Se você alterar `TURN_PORT`, `TURN_TLS_PORT`, `TURN_MIN_PORT`, `TURN_MAX_PORT`, `TURN_REALM` ou `TURN_SECRET`, recrie o container Coturn (`docker compose up -d --force-recreate coturn`).
+
+## Experiência sem código para os usuários
+
+A instalação do bot é feita uma vez pelo administrador. A partir daí, ninguém precisa abrir terminal, editar TypeScript ou conhecer Docker para iniciar uma transmissão:
+
+1. O administrador convida o bot pelo link gerado por `npm run setup` e o mantém online com `docker compose up -d`.
+2. O host entra no servidor Discord e executa `/iniciar-stream` no chat.
+3. O bot responde com uma mensagem efêmera e o botão **Abrir interface do host**.
+4. O host clica no botão, clica em **Compartilhar tela** e escolhe tela/janela e áudio do sistema no navegador.
+5. Cada viewer autorizado executa `/entrar-stream`, recebe uma mensagem efêmera com seu link e apenas abre esse link.
+6. O host pode alterar o preset durante a transmissão; `/status-stream` mostra viewers e relay; `/encerrar-stream` fecha tudo.
+
+O bot não envia vídeo pelo Discord. Ele cria a sala no backend local, gera o link efêmero e autoriza a conexão WebRTC.
 
 ## Uso diário
 

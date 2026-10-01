@@ -13,6 +13,7 @@
     "dev:backend": "npm run dev --workspace @private-stream/backend",
     "dev:bot": "npm run dev --workspace @private-stream/bot",
     "dev:web": "npm run dev --workspace @private-stream/web",
+    "setup": "node scripts/setup.mjs",
     "test": "npm run build --workspace @private-stream/shared && vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false",
