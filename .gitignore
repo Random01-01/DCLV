@@ -1,0 +1,19 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.vscode/
+.idea/
+apps/web/dist/
+data/
+turn/*.pem
+
+*.tsbuildinfo
+
+# Never publish TURN private keys or certificates
+turn/certs/*
+!turn/certs/.gitkeep
