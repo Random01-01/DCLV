@@ -1,0 +1,37 @@
+{
+  "name": "private-stream-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Self-hosted, Discord-authenticated WebRTC screen streaming bridge.",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @private-stream/shared && npm run build --workspace @private-stream/backend && npm run build --workspace @private-stream/bot && npm run build --workspace @private-stream/web",
+    "dev:backend": "npm run dev --workspace @private-stream/backend",
+    "dev:bot": "npm run dev --workspace @private-stream/bot",
+    "dev:web": "npm run dev --workspace @private-stream/web",
+    "test": "npm run build --workspace @private-stream/shared && vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b --pretty false",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "engines": {
+    "node": ">=20.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "typescript-eslint": "^8.18.0",
+    "eslint": "^9.16.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "vite": "^6.4.3"
+  }
+}

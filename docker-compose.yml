@@ -1,0 +1,83 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    env_file: .env
+    restart: unless-stopped
+    expose:
+      - "3000"
+    networks: [stream]
+
+  bot:
+    build:
+      context: .
+      dockerfile: docker/bot.Dockerfile
+    environment:
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      DISCORD_ALLOWED_ROLE_IDS: ${DISCORD_ALLOWED_ROLE_IDS:-}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET}
+      PUBLIC_WEB_URL: ${PUBLIC_WEB_URL:-http://localhost:8080}
+      BACKEND_URL: http://backend:3000
+    depends_on:
+      backend:
+        condition: service_started
+    restart: unless-stopped
+    networks: [stream]
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    environment:
+      BACKEND_UPSTREAM: http://backend:3000
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+    networks: [stream]
+
+  coturn:
+    image: coturn/coturn:4.6.2
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+        sed -e "s|__TURN_PORT__|$${TURN_PORT:-3478}|g" \
+            -e "s|__TURN_TLS_PORT__|$${TURN_TLS_PORT:-5349}|g" \
+            -e "s|__TURN_REALM__|$${TURN_REALM:-private-stream.local}|g" \
+            -e "s|__TURN_SECRET__|$${TURN_SECRET}|g" \
+            -e "s|__TURN_MIN_PORT__|$${TURN_MIN_PORT:-49152}|g" \
+            -e "s|__TURN_MAX_PORT__|$${TURN_MAX_PORT:-49252}|g" \
+            /etc/coturn/turnserver.conf > /tmp/turnserver.conf
+        if [ -n "$${TURN_EXTERNAL_IP:-}" ]; then echo "external-ip=$${TURN_EXTERNAL_IP}" >> /tmp/turnserver.conf; fi
+        if [ -n "$${TURN_TLS_CERT:-}" ] && [ -f "$${TURN_TLS_CERT}" ]; then echo "cert=$${TURN_TLS_CERT}" >> /tmp/turnserver.conf; fi
+        if [ -n "$${TURN_TLS_KEY:-}" ] && [ -f "$${TURN_TLS_KEY}" ]; then echo "pkey=$${TURN_TLS_KEY}" >> /tmp/turnserver.conf; fi
+        turnserver -c /tmp/turnserver.conf --log-file=stdout
+    env_file: .env
+    volumes:
+      - ./turn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+      - ./turn/certs:/etc/coturn/certs:ro
+    ports:
+      - "${TURN_PORT:-3478}:${TURN_PORT:-3478}/udp"
+      - "${TURN_PORT:-3478}:${TURN_PORT:-3478}/tcp"
+      - "${TURN_TLS_PORT:-5349}:${TURN_TLS_PORT:-5349}/tcp"
+      - "${TURN_MIN_PORT:-49152}-${TURN_MAX_PORT:-49252}:${TURN_MIN_PORT:-49152}-${TURN_MAX_PORT:-49252}/udp"
+    restart: unless-stopped
+    networks: [stream]
+
+  # Perfil opcional: docker compose --profile tunnel up -d
+  # Quick tunnels are for testing. For production use a named tunnel token.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: [tunnel]
+    command: tunnel --no-autoupdate --url http://web:80
+    depends_on: [web]
+    restart: unless-stopped
+    networks: [stream]
+
+networks:
+  stream:
+    driver: bridge
