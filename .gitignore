@@ -11,3 +11,5 @@ coverage/
 apps/web/dist/
 data/
 turn/*.pem
+
+*.tsbuildinfo
