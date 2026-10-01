@@ -4,3 +4,7 @@ coverage
 .git
 .env
 *.log
+
+.env.*
+**/*.tsbuildinfo
+turn/certs

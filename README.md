@@ -20,6 +20,7 @@ Depois da configuração inicial, a experiência do usuário é **sem código**:
 - Áudio estéreo sem processamento de voz e teto de 128 kbps no sender Opus.
 - Painel de resolução, FPS, bitrate, perda e estado do relay.
 - Docker Compose com bot, backend, web, Coturn e perfil opcional de Cloudflare Tunnel.
+- Setup visual minimalista, atalhos por sistema operacional e guia [DDP](DDP.md).
 - Testes Vitest de relay-only SDP, expiração/uso único e higiene de payload público.
 
 ## Aviso importante: “custo zero” não significa banda zero
@@ -36,98 +37,75 @@ Há overhead de WebRTC/TURN, ACKs e variação de bitrate. Deixe margem de 20–
 
 A conexão TURN relay-only também faz o tráfego de mídia passar pelo Coturn. Quando o Coturn está na máquina do host, cada viewer consome upload e download do host (o viewer recebe o stream). Uma VPS gratuita ou um relay remoto pode mudar o gargalo, mas **não elimina custos, limites, termos de uso ou necessidade de configuração**. Verifique as cotas atuais do provedor antes de contar com qualquer oferta gratuita.
 
-## Instalação pelo GitHub
+## Setup visual — sem editar código
 
-### Pré-requisitos
+O administrador usa um assistente minimalista de três etapas: **Seu bot → Conexão → Ativar**. Os membros continuam usando apenas os comandos do Discord e o navegador.
 
-- Git 2.40+
-- Docker Engine 24+ e Docker Compose v2
-- Conta e aplicação no [Discord Developer Portal](https://discord.com/developers/applications)
-- Navegador Chromium/Firefox/Safari atualizado com `getDisplayMedia`
-- Para 1080p60: GPU/aceleração de hardware habilitada no navegador e upload suficiente
+### 1. Prepare o computador
 
-### 1. Baixe o código
+- Instale **[Node.js LTS](https://nodejs.org/en/download)** (22+ recomendado, mínimo 20.11) pelo instalador oficial.
+- Instale e abra **[Docker Desktop](https://docs.docker.com/get-started/get-docker/)**, ou Docker Engine com Compose v2.20+ no Linux.
+- Baixe **Code → Download ZIP** na [branch do projeto](https://github.com/Random01-01/DCLV/tree/arena/01a0f959-dclv) e **extraia a pasta inteira**.
+- Use um navegador atualizado. A qualidade e o áudio capturado dependem do navegador e sistema operacional.
 
-Substitua a URL abaixo por um fork da sua organização se necessário:
+O setup verifica o Docker e orienta a instalação se estiver faltando; não instala software administrativo silenciosamente. Os instaladores oficiais podem pedir confirmação ou reinício. Docker Desktop possui termos de licença próprios; Docker Engine no Linux não exige licença paga.
+
+### 2. Crie o bot no Discord
+
+Siga **[DDP — Discord Developer Portal](DDP.md)**: o guia explica a criação da aplicação, Application ID, token, intents, permissões, convite e ID do servidor. Você nunca precisa enviar o token a outra pessoa.
+
+### 3. Abra o assistente
+
+| Sistema | Arquivo para abrir na pasta extraída |
+| --- | --- |
+| Windows | `Setup-Windows.cmd` — duplo clique |
+| macOS | `Setup-macOS.command` — Finder → Abrir |
+| Linux | `Setup-Linux.sh` — Executar como programa |
+
+No macOS/Linux, o gerenciador de arquivos pode exigir a permissão de execução nas propriedades. Detalhes no [DDP](DDP.md#5--abra-o-setup--sem-terminal).
+
+O assistente abre **http://localhost:4177**. Mantenha a janela do atalho aberta durante a configuração. **Não precisa executar `npm install` no computador do usuário**: o setup usa apenas recursos nativos do Node; as dependências do stack são instaladas nos containers.
+
+1. **Seu bot:** cole Application ID e Bot Token; servidor e cargos são opcionais.
+2. **Conexão:** escolha teste somente neste computador ou informe URL HTTPS e TURN alcançáveis pelos participantes. O IPv4 público do TURN pode ser informado para NAT.
+3. **Ativar:** revise, salve, abra **Adicionar ao Discord** e clique em **Iniciar PrivateStream**.
+
+O assistente gera os segredos, grava `.env` com proteção local, cria o convite, verifica Docker/Compose e acompanha a inicialização. O token é removido do formulário após salvar. Configurações existentes só são substituídas com confirmação; isso renova segredos e substitui ajustes anteriores. Não reconfigure durante uma transmissão ativa.
+
+**Containers iniciados não significa bot autenticado ou mídia testada.** Aguarde o bot ficar online no Discord e teste com um espectador. Ao concluir, **Fechar assistente** encerra o setup, mas os serviços continuam no Docker. A máquina e o Docker precisam permanecer ligados.
+
+### Rede: o que não é automático
+
+- **Teste local:** `http://localhost:8080` funciona apenas no próprio computador; não compartilhe links localhost com outras pessoas.
+- **Outros dispositivos, mesmo na LAN:** é necessário **HTTPS com certificado confiável** para a captura de tela. O setup recusa HTTP em IPs da LAN, pois isso não atende ao requisito de contexto seguro do navegador.
+- O setup **não provisiona domínio, TLS, VPN, túnel, firewall ou roteador**. Informe uma URL HTTPS já acessível, apontando por proxy/túnel para a porta 8080.
+- Um túnel HTTPS da página **não substitui o TURN**. O relay precisa ser alcançável: UDP/TCP 3478, UDP 49152–49252, e TCP 5349 quando TURN TLS estiver configurado.
+- NAT/CGNAT podem exigir regras de rede, VPN ou relay remoto. Leia os cenários abaixo e o [DDP](DDP.md).
+- Não exponha a porta **4177**: o setup real aceita somente clientes locais, com proteção de origem e chave temporária. O preview público é apenas demonstrativo e não salva credenciais nem executa Docker.
+
+### Alternativas para desenvolvedores
+
+Se já usa terminal, os mesmos recursos estão disponíveis por:
 
 ```bash
-git clone https://github.com/Random01-01/DCLV.git private-stream-bridge
+git clone --branch arena/01a0f959-dclv https://github.com/Random01-01/DCLV.git private-stream-bridge
 cd private-stream-bridge
-git checkout arena/01a0f959-dclv   # ou a tag/release escolhida
+npm run setup           # interface local; não precisa npm install
+npm run setup:cli       # assistente textual legado
+npm run setup:preview   # demonstração pública, sem escrita ou execução de Docker
 ```
 
-Para acompanhar atualizações:
+Para atualização, na branch correspondente, use `git pull --ff-only`. Não substitua `.env` por arquivos de exemplo ao atualizar.
 
-```bash
-git fetch origin
-git pull --ff-only origin main
-```
+Também é possível configurar `.env` manualmente a partir de `.env.example` e iniciar com `docker compose up -d --build`. Os segredos `HMAC_SECRET`, `INTERNAL_API_SECRET` e `TURN_SECRET` devem ser aleatórios e diferentes (32 bytes cada). Nunca comite `.env` ou certificados privados.
 
-### 2. Crie o bot do Discord
-
-1. No Developer Portal, crie uma Application e copie **Application ID**.
-2. Em **Bot**, crie o bot e copie o token uma única vez.
-3. Em **OAuth2 → URL Generator**, selecione scopes `bot` e `applications.commands`.
-4. Conceda apenas as permissões necessárias: `View Channels`, `Send Messages`, `Use Slash Commands` e `Embed Links`.
-5. Instale o bot no servidor de teste.
-6. Copie o ID do servidor com o modo desenvolvedor do Discord ativo. Definir `DISCORD_GUILD_ID` faz os comandos aparecerem rapidamente; vazio registra comandos globais.
-
-### 3. Configure o bot sem editar código
-
-O caminho recomendado é o assistente interativo. Ele gera os três segredos, grava `.env` com permissão restrita e imprime o link de convite do bot:
-
-```bash
-npm install
-npm run setup
-```
-
-O assistente pede apenas Application ID, Bot Token, servidor de teste e endereço do host. Abra o **Convite do bot** exibido e selecione o servidor no Discord. Nenhum usuário final precisará instalar dependências ou alterar código.
-
-Se preferir configurar manualmente:
-
-```bash
-cp .env.example .env
-openssl rand -hex 32   # use um valor para HMAC_SECRET
-openssl rand -hex 32   # outro para INTERNAL_API_SECRET
-openssl rand -hex 32   # outro para TURN_SECRET
-$EDITOR .env
-```
-
-Preencha, no mínimo:
-
-```dotenv
-DISCORD_TOKEN=...
-DISCORD_CLIENT_ID=...
-DISCORD_GUILD_ID=...
-INTERNAL_API_SECRET=...
-HMAC_SECRET=...
-TURN_SECRET=...
-PUBLIC_WEB_URL=http://IP_DA_MAQUINA:8080
-PUBLIC_TURN_HOST=IP_DA_MAQUINA
-```
-
-- Em teste na mesma LAN, `PUBLIC_WEB_URL` e `PUBLIC_TURN_HOST` podem usar o IP privado do host, por exemplo `192.168.1.20`.
-- Não use `localhost` no link que será aberto por outro computador: `localhost` aponta para o computador do viewer.
-- Para internet, use um DNS/IP público alcançável e configure `PUBLIC_TURN_HOST` com esse endereço. O certificado TLS de `turns:` deve corresponder ao hostname.
-- `DISCORD_ALLOWED_ROLE_IDS` aceita IDs separados por vírgula. Se estiver vazio, qualquer membro do servidor pode executar `/entrar-stream`.
-
-### 4. Suba o stack
-
-```bash
-docker compose up -d --build
-docker compose ps
-docker compose logs -f backend bot
-```
-
-O web app fica em `http://IP_DA_MAQUINA:8080`. O health check do backend fica em `http://IP_DA_MAQUINA:3000/healthz` somente se a porta for publicada manualmente; por padrão ele fica acessível apenas dentro da rede Docker.
-
-> O serviço renderiza `turn/turnserver.conf` com os valores do `.env` ao iniciar. Se você alterar `TURN_PORT`, `TURN_TLS_PORT`, `TURN_MIN_PORT`, `TURN_MAX_PORT`, `TURN_REALM` ou `TURN_SECRET`, recrie o container Coturn (`docker compose up -d --force-recreate coturn`).
+Por padrão, nginx expõe a página na porta 8080 e encaminha API/WS para o backend interno. O endpoint `/healthz` do backend não é publicado na máquina. O Coturn renderiza seu template com os valores do `.env` durante a inicialização.
 
 ## Experiência sem código para os usuários
 
 A instalação do bot é feita uma vez pelo administrador. A partir daí, ninguém precisa abrir terminal, editar TypeScript ou conhecer Docker para iniciar uma transmissão:
 
-1. O administrador convida o bot pelo link gerado por `npm run setup` e o mantém online com `docker compose up -d`.
+1. O administrador usa o setup visual para configurar o stack, convidar o bot e iniciar os serviços uma vez.
 2. O host entra no servidor Discord e executa `/iniciar-stream` no chat.
 3. O bot responde com uma mensagem efêmera e o botão **Abrir interface do host**.
 4. O host clica no botão, clica em **Compartilhar tela** e escolhe tela/janela e áudio do sistema no navegador.
@@ -141,7 +119,7 @@ O bot não envia vídeo pelo Discord. Ele cria a sala no backend local, gera o l
 1. No Discord, um administrador ou membro com `Manage Server` executa `/iniciar-stream` e escolhe o preset.
 2. Abra o botão **Abrir interface do host** em um navegador no computador que fará a captura.
 3. Clique em **Compartilhar tela** e selecione uma tela/janela. Para áudio, habilite o áudio do sistema no seletor do navegador.
-4. Compartilhe o link retornado por `/entrar-stream` apenas com membros autorizados. Cada execução gera um link independente e de uso único.
+4. Cada membro autorizado executa `/entrar-stream` para receber seu próprio link privado, de uso único. Não encaminhe links de acesso.
 5. O viewer abre o link; o vídeo ocupa a tela sem barras intrusivas. O host pode trocar o preset e alternar métricas.
 6. Use `/status-stream` para ver preset, viewers, expiração e estado do relay.
 7. Use `/encerrar-stream` ao terminar. As conexões são fechadas, os tokens da sala são removidos e as credenciais não podem ser reutilizadas.
@@ -149,8 +127,8 @@ O bot não envia vídeo pelo Discord. Ele cria a sala no backend local, gera o l
 ### Teste somente na LAN
 
 1. Descubra o IP LAN do host (`ip addr`, `ipconfig` ou `ifconfig`).
-2. Configure `PUBLIC_WEB_URL=http://IP_LAN:8080`, `PUBLIC_TURN_HOST=IP_LAN`.
-3. Permita TCP/UDP 8080, UDP/TCP 3478, TCP 5349 e UDP 49152–49252 no firewall do host.
+2. Use uma URL HTTPS com certificado confiável para `PUBLIC_WEB_URL`, via proxy/túnel para a porta 8080, e `PUBLIC_TURN_HOST=IP_LAN`. A exceção HTTP/localhost vale somente para teste na própria máquina.
+3. Permita a conexão web ao proxy, UDP/TCP 3478 e UDP 49152–49252; TCP 5349 se TURN TLS estiver configurado. A página interna usa TCP 8080, não UDP.
 4. Abra o link do host no host e o link do viewer em outro computador da mesma rede.
 5. No painel do host, confirme `Relay TURN ativo`. Se ficar em “conectando”, veja `docker compose logs coturn` e confira a faixa UDP.
 
@@ -170,7 +148,7 @@ Para uso repetível, crie um túnel nomeado no Cloudflare, aponte-o para `http:/
 
 **Tailscale:**
 
-- Coloque host e viewers na mesma tailnet e use o IP/hostname Tailscale em `PUBLIC_WEB_URL` e `PUBLIC_TURN_HOST`.
+- Coloque host e viewers na mesma tailnet. Use uma URL HTTPS confiável em `PUBLIC_WEB_URL` (por exemplo, via Tailscale Serve) e o IP/hostname Tailscale alcançável em `PUBLIC_TURN_HOST`.
 - Alternativamente, exponha apenas a interface web com Funnel e deixe a mídia em uma rota Tailscale alcançável. Firewalls e políticas da tailnet continuam valendo.
 
 **ngrok free:**
@@ -183,7 +161,7 @@ Para uso repetível, crie um túnel nomeado no Cloudflare, aponte-o para `http:/
 
 1. Faça port-forward no roteador para a máquina do host: UDP/TCP 3478, TCP 5349 e UDP 49152–49252.
 2. Defina `PUBLIC_TURN_HOST` como o IP público ou DNS do host.
-3. Para `turns:` real, monte um certificado em `turn/certs/` e descomente `cert`/`pkey` em `turn/turnserver.conf`.
+3. Para `turns:` real, coloque `fullchain.pem` e `privkey.pem` em `turn/certs/`. O entrypoint inclui `cert`/`pkey` automaticamente quando os arquivos configurados existem. O certificado deve corresponder ao hostname TURN.
 4. Se o IP muda, use DDNS. UPnP/NAT-PMP pode automatizar o encaminhamento, mas aumenta a superfície de ataque; prefira configuração manual e firewall restritivo.
 5. Teste com um viewer em rede móvel, não apenas na mesma LAN.
 
@@ -229,6 +207,10 @@ packages/
   shared/        tipos, schemas Zod, HMAC, política relay-only
 turn/            configuração e ponto de montagem de certificados Coturn
 docker/          Dockerfiles e proxy nginx
+setup/           UI minimalista (HTML, CSS e JS locais, sem CDN)
+scripts/         servidor, validação e testes do setup, assistente textual
+Setup-*          atalhos para Windows, macOS e Linux
+DDP.md           guia Discord Developer Portal e instalação sem terminal
 .github/         CI no GitHub Actions
 ```
 
@@ -265,13 +247,17 @@ Os testes principais garantem:
 - uma oferta SDP com candidato `host`/`srflx` é rejeitada e uma oferta relay é aceita;
 - HMAC inválido, expiração e reuso de token são rejeitados;
 - o payload público não inclui `discordId`, `guildId`, IP ou campos de rede;
-- a fronteira `/api/rooms/:id/session` não vaza IDs do Discord.
+- a fronteira `/api/rooms/:id/session` não vaza IDs do Discord;
+- o setup valida entradas, protege o `.env`, exige origem/chave local e impede builds simultâneos;
+- o preview não salva arquivos nem inicia containers; logs Docker não são enviados à UI.
+
+Os testes nativos do setup também podem ser executados isoladamente: `npm run test:setup`. Os testes de inicialização usam um executor Docker simulado; não substituem um teste real de instalação, Discord e TURN.
 
 ## Troubleshooting
 
 - **`expired_token`:** gere outro link com `/entrar-stream`; não recarregue um link já consumido.
 - **Sala abre mas não há mídia:** confira `PUBLIC_TURN_HOST`, portas UDP da faixa relay, firewall e `docker compose logs coturn`.
-- **`localhost` no viewer:** troque `PUBLIC_WEB_URL` por IP LAN, DNS público ou hostname Tailscale.
+- **`localhost` no viewer:** configure uma URL HTTPS alcançável em `PUBLIC_WEB_URL`, e o IP/DNS correto em `PUBLIC_TURN_HOST`.
 - **1080p60 instável:** teste 1080p30 ou 720p60, confirme aceleração de hardware, reduza viewers e meça upload.
 - **Áudio ausente:** o seletor de tela do navegador precisa ter “compartilhar áudio do sistema”; isso varia por SO/navegador.
 - **Cloudflare Tunnel funciona para a página mas não para vídeo:** esperado; configure um TURN alcançável separadamente.

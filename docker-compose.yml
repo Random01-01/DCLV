@@ -1,3 +1,5 @@
+name: privatestream-bridge
+
 services:
   backend:
     build:
@@ -7,6 +9,12 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz', {signal: AbortSignal.timeout(3000)}).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 12
+      start_period: 10s
     networks: [stream]
 
   bot:
@@ -23,7 +31,7 @@ services:
       BACKEND_URL: http://backend:3000
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
     networks: [stream]
 
@@ -35,7 +43,7 @@ services:
       BACKEND_UPSTREAM: http://backend:3000
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${WEB_PORT:-8080}:80"
     restart: unless-stopped
@@ -44,18 +52,20 @@ services:
   coturn:
     image: coturn/coturn:4.6.2
     entrypoint: ["/bin/sh", "-c"]
-    command: |
-        sed -e "s|__TURN_PORT__|$${TURN_PORT:-3478}|g" \
-            -e "s|__TURN_TLS_PORT__|$${TURN_TLS_PORT:-5349}|g" \
-            -e "s|__TURN_REALM__|$${TURN_REALM:-private-stream.local}|g" \
-            -e "s|__TURN_SECRET__|$${TURN_SECRET}|g" \
-            -e "s|__TURN_MIN_PORT__|$${TURN_MIN_PORT:-49152}|g" \
-            -e "s|__TURN_MAX_PORT__|$${TURN_MAX_PORT:-49252}|g" \
-            /etc/coturn/turnserver.conf > /tmp/turnserver.conf
-        if [ -n "$${TURN_EXTERNAL_IP:-}" ]; then echo "external-ip=$${TURN_EXTERNAL_IP}" >> /tmp/turnserver.conf; fi
-        if [ -n "$${TURN_TLS_CERT:-}" ] && [ -f "$${TURN_TLS_CERT}" ]; then echo "cert=$${TURN_TLS_CERT}" >> /tmp/turnserver.conf; fi
-        if [ -n "$${TURN_TLS_KEY:-}" ] && [ -f "$${TURN_TLS_KEY}" ]; then echo "pkey=$${TURN_TLS_KEY}" >> /tmp/turnserver.conf; fi
-        turnserver -c /tmp/turnserver.conf --log-file=stdout
+    command:
+      - |
+          set -eu
+          sed -e "s|__TURN_PORT__|$${TURN_PORT:-3478}|g" \
+              -e "s|__TURN_TLS_PORT__|$${TURN_TLS_PORT:-5349}|g" \
+              -e "s|__TURN_REALM__|$${TURN_REALM:-private-stream.local}|g" \
+              -e "s|__TURN_SECRET__|$${TURN_SECRET}|g" \
+              -e "s|__TURN_MIN_PORT__|$${TURN_MIN_PORT:-49152}|g" \
+              -e "s|__TURN_MAX_PORT__|$${TURN_MAX_PORT:-49252}|g" \
+              /etc/coturn/turnserver.conf > /tmp/turnserver.conf
+          if [ -n "$${TURN_EXTERNAL_IP:-}" ]; then echo "external-ip=$${TURN_EXTERNAL_IP}" >> /tmp/turnserver.conf; fi
+          if [ -n "$${TURN_TLS_CERT:-}" ] && [ -f "$${TURN_TLS_CERT}" ]; then echo "cert=$${TURN_TLS_CERT}" >> /tmp/turnserver.conf; fi
+          if [ -n "$${TURN_TLS_KEY:-}" ] && [ -f "$${TURN_TLS_KEY}" ]; then echo "pkey=$${TURN_TLS_KEY}" >> /tmp/turnserver.conf; fi
+          exec turnserver -c /tmp/turnserver.conf --log-file=stdout
     env_file: .env
     volumes:
       - ./turn/turnserver.conf:/etc/coturn/turnserver.conf:ro

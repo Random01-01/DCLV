@@ -13,12 +13,15 @@
     "dev:backend": "npm run dev --workspace @private-stream/backend",
     "dev:bot": "npm run dev --workspace @private-stream/bot",
     "dev:web": "npm run dev --workspace @private-stream/web",
-    "setup": "node scripts/setup.mjs",
-    "test": "npm run build --workspace @private-stream/shared && vitest run",
+    "setup": "node scripts/setup-ui.mjs",
+    "setup:cli": "node scripts/setup.mjs",
+    "test": "npm run build --workspace @private-stream/shared && vitest run && npm run test:setup",
     "test:watch": "vitest",
     "typecheck": "tsc -b --pretty false",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "setup:preview": "node scripts/setup-ui.mjs --demo",
+    "test:setup": "node --test scripts/setup.test.mjs"
   },
   "engines": {
     "node": ">=20.11"

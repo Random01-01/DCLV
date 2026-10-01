@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101311" />
+    <meta name="setup-key" content="__SETUP_KEY__" />
+    <title>Setup · PrivateStream Bridge</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div id="demo-banner" class="demo-banner" hidden>
+      PRÉVIA INTERATIVA — sem gravação ou instalação. Não use credenciais reais aqui.
+    </div>
+    <main class="page">
+      <header class="brand-row">
+        <a class="brand" href="/" aria-label="PrivateStream Bridge, início do setup">
+          <span class="brand-icon" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <rect x="3" y="5" width="18" height="12" rx="3" />
+              <path d="m10 9 5 2-5 2Z" />
+              <path d="M9 21h6m-3-4v4" /></svg
+          ></span>
+          <span>PrivateStream <span class="brand-light">Bridge</span></span>
+        </a>
+        <span class="local-badge"><span class="small-dot"></span>SETUP LOCAL</span>
+      </header>
+
+      <div class="intro">
+        <p class="eyebrow">SUA TELA. SEU SERVIDOR.</p>
+        <h1>Conecte. Compartilhe.</h1>
+        <p>
+          Prepare seu bot uma vez.<br class="mobile-break" />
+          Depois, tudo começa no Discord.
+        </p>
+      </div>
+
+      <section class="card" aria-label="Assistente de configuração">
+        <nav class="steps" aria-label="Etapas do setup">
+          <button class="step is-active" type="button" data-go="0" aria-current="step">
+            <span class="step-number">01</span><span>Seu bot</span>
+          </button>
+          <span class="step-line" aria-hidden="true"></span>
+          <button class="step" type="button" data-go="1" disabled>
+            <span class="step-number">02</span><span>Conexão</span>
+          </button>
+          <span class="step-line" aria-hidden="true"></span>
+          <button class="step" type="button" data-go="2" disabled>
+            <span class="step-number">03</span><span>Ativar</span>
+          </button>
+        </nav>
+
+        <form id="setup-form" autocomplete="off" novalidate>
+          <section class="panel" data-panel="0" aria-labelledby="bot-title">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow muted">01 / IDENTIDADE</p>
+                <h2 id="bot-title" tabindex="-1">Vamos conhecer seu bot.</h2>
+              </div>
+              <span class="section-icon" aria-hidden="true">↗</span>
+            </div>
+            <p class="description">
+              Copie dois dados do Discord Developer Portal. Sem editar código, sem abrir arquivos de
+              configuração.
+            </p>
+            <div class="fields">
+              <div class="field">
+                <label for="clientId">Application ID</label
+                ><input
+                  id="clientId"
+                  name="clientId"
+                  required
+                  inputmode="numeric"
+                  pattern="[0-9]{17,20}"
+                  maxlength="20"
+                  placeholder="Ex.: 123456789012345678"
+                  spellcheck="false"
+                /><span class="field-hint">General Information → Application ID</span>
+              </div>
+              <div class="field">
+                <label for="botToken">Bot Token <span class="label-note">PRIVADO</span></label>
+                <div class="password-field">
+                  <input
+                    id="botToken"
+                    name="botToken"
+                    required
+                    type="password"
+                    minlength="20"
+                    maxlength="300"
+                    placeholder="Cole o token do seu bot"
+                    autocomplete="off"
+                    spellcheck="false"
+                  /><button
+                    id="show-token"
+                    type="button"
+                    aria-label="Mostrar token"
+                    aria-pressed="false"
+                  >
+                    Mostrar
+                  </button>
+                </div>
+                <span class="field-hint">Bot → Reset Token. Nunca compartilhe esse valor.</span>
+              </div>
+            </div>
+            <details class="advanced">
+              <summary>Servidor e cargos <span>opcional</span></summary>
+              <div class="fields details-fields">
+                <div class="field">
+                  <label for="guildId">ID do servidor</label
+                  ><input
+                    id="guildId"
+                    inputmode="numeric"
+                    pattern="[0-9]{17,20}"
+                    maxlength="20"
+                    placeholder="Para os comandos aparecerem mais rápido"
+                  /><span class="field-hint"
+                    >Discord → Modo Desenvolvedor → Copiar ID do servidor</span
+                  >
+                </div>
+                <div class="field">
+                  <label for="allowedRoleIds">IDs dos cargos autorizados</label
+                  ><input
+                    id="allowedRoleIds"
+                    maxlength="500"
+                    placeholder="IDs separados por vírgula"
+                  /><span class="field-hint"
+                    >Vazio permite viewers de todos os cargos do servidor.</span
+                  >
+                </div>
+              </div>
+            </details>
+            <a
+              class="guide-link"
+              href="https://github.com/Random01-01/DCLV/blob/arena/01a0f959-dclv/DDP.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              ><span aria-hidden="true">↗</span> Ainda não tem um bot? Siga o guia DDP.</a
+            >
+          </section>
+
+          <section class="panel" data-panel="1" aria-labelledby="connection-title" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow muted">02 / CONECTIVIDADE</p>
+                <h2 id="connection-title" tabindex="-1">Por onde vamos conectar?</h2>
+              </div>
+              <span class="section-icon" aria-hidden="true">⌁</span>
+            </div>
+            <p class="description">
+              O bot entrega o link. Seu computador mantém a página e o relay de vídeo funcionando.
+            </p>
+            <fieldset class="mode-picker">
+              <legend class="sr-only">Onde será usada a transmissão?</legend>
+              <label
+                ><input type="radio" name="mode" value="network" checked /><span
+                  ><strong>Com outras pessoas</strong
+                  ><small>Rede local, VPN ou internet</small></span
+                ></label
+              ><label
+                ><input type="radio" name="mode" value="local" /><span
+                  ><strong>Teste neste computador</strong
+                  ><small>Sem acesso de outros dispositivos</small></span
+                ></label
+              >
+            </fieldset>
+            <div class="fields">
+              <div class="field">
+                <label for="publicWebUrl">Endereço da transmissão</label
+                ><input
+                  id="publicWebUrl"
+                  required
+                  type="url"
+                  maxlength="300"
+                  placeholder="https://stream.exemplo.com"
+                  spellcheck="false"
+                /><span class="field-hint">URL base HTTPS já acessível pelos participantes.</span>
+              </div>
+              <div class="field">
+                <label for="turnHost">Host do relay TURN</label
+                ><input
+                  id="turnHost"
+                  required
+                  maxlength="253"
+                  placeholder="turn.exemplo.com ou IPv4"
+                  spellcheck="false"
+                /><span class="field-hint"
+                  >Sem https:// ou porta. Deve ser alcançável pelos navegadores.</span
+                >
+              </div>
+            </div>
+            <details class="advanced" id="nat-options">
+              <summary>Atrás de um roteador? <span>opcional</span></summary>
+              <div class="field details-fields">
+                <label for="turnExternalIp">IPv4 público anunciado pelo TURN</label
+                ><input
+                  id="turnExternalIp"
+                  maxlength="40"
+                  placeholder="IP público do host, se houver NAT"
+                  spellcheck="false"
+                /><span class="field-hint"
+                  >Não configura o roteador. Encaminhe as portas indicadas no DDP.</span
+                >
+              </div>
+            </details>
+            <div class="notice" id="network-note">
+              <span aria-hidden="true">i</span>
+              <p>
+                HTTPS é necessário para compartilhar a tela. O assistente não cria domínio,
+                certificado ou regras no roteador. Um túnel da página não substitui o TURN.
+              </p>
+            </div>
+          </section>
+
+          <section class="panel" data-panel="2" aria-labelledby="activate-title" hidden>
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow muted">03 / PRONTO PARA CONECTAR</p>
+                <h2 id="activate-title" tabindex="-1">O resto fica com a gente.</h2>
+              </div>
+              <span class="section-icon" aria-hidden="true">✓</span>
+            </div>
+            <div id="review">
+              <p class="description">
+                Vamos gerar três segredos aleatórios e salvar sua configuração somente neste
+                computador.
+              </p>
+              <dl class="review-list">
+                <div>
+                  <dt>Aplicação Discord</dt>
+                  <dd id="review-client"></dd>
+                </div>
+                <div>
+                  <dt>Transmissão</dt>
+                  <dd id="review-url"></dd>
+                </div>
+                <div>
+                  <dt>Credenciais</dt>
+                  <dd>Arquivo local protegido <span class="subtle">.env</span></dd>
+                </div>
+              </dl>
+              <label id="overwrite-row" class="checkbox-row" hidden
+                ><input type="checkbox" id="confirmOverwrite" /><span
+                  >Substituir a configuração existente. Os segredos serão renovados e ajustes
+                  anteriores serão substituídos; o próximo início recriará os serviços.</span
+                ></label
+              >
+              <div class="notice">
+                <span aria-hidden="true">◇</span>
+                <p>
+                  O token não aparece em logs nem é salvo no armazenamento do navegador. A
+                  configuração não é enviada ao GitHub.
+                </p>
+              </div>
+            </div>
+            <div id="activation" hidden>
+              <p class="description" id="saved-description">
+                Configuração salva. Seu token já foi removido do formulário.
+              </p>
+              <div class="activation-item">
+                <span class="item-number">1</span>
+                <div>
+                  <h3>Convide seu bot</h3>
+                  <p>Escolha o servidor e autorize as permissões mínimas.</p>
+                  <div class="button-row">
+                    <a
+                      class="button secondary"
+                      id="invite-link"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >Adicionar ao Discord ↗</a
+                    ><button class="text-button" type="button" id="copy-invite">Copiar link</button>
+                  </div>
+                </div>
+              </div>
+              <div class="activation-item">
+                <span class="item-number">2</span>
+                <div>
+                  <h3>Inicie os serviços</h3>
+                  <p>Bot, página, backend e TURN. O primeiro build leva alguns minutos.</p>
+                  <button class="button primary" type="button" id="start">
+                    Iniciar PrivateStream <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+              </div>
+              <div id="job-status" class="job-status" role="status" hidden>
+                <span class="status-indicator"></span>
+                <p id="job-message"></p>
+              </div>
+              <div id="complete" class="complete" hidden>
+                <p>Quando o bot estiver online:</p>
+                <code>/iniciar-stream</code>
+                <p>
+                  Abra o link recebido e clique em <strong>Compartilhar tela</strong>. A máquina e o
+                  Docker precisam permanecer ligados.
+                </p>
+                <button type="button" class="text-button" id="quit">Fechar assistente</button>
+              </div>
+            </div>
+          </section>
+          <div id="message" class="message" role="alert" hidden></div>
+          <div class="form-footer" id="form-footer">
+            <span id="footer-note" class="privacy-note"
+              ><svg aria-hidden="true" viewBox="0 0 16 16">
+                <rect x="3" y="7" width="10" height="7" rx="2" />
+                <path d="M5 7V5a3 3 0 0 1 6 0v2" />
+              </svg>
+              Secreta. Local. Sua.</span
+            ><button type="button" class="text-button" id="back" hidden>← Voltar</button
+            ><button type="submit" class="button primary" id="next">
+              Continuar <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="environment" aria-label="Estado do ambiente">
+        <div class="environment-top">
+          <div class="environment-label">
+            <span id="docker-dot" class="status-indicator"></span
+            ><span id="docker-status" role="status">Verificando seu ambiente…</span>
+          </div>
+          <button type="button" id="recheck" class="text-button">Verificar novamente</button>
+        </div>
+        <div id="docker-help" class="environment-help" hidden>
+          <p>
+            Instale o Docker Desktop, abra o aplicativo e aguarde o Engine iniciar. No Linux, use
+            Docker Engine com Compose v2.20+ ou Docker Desktop.
+          </p>
+          <a
+            href="https://docs.docker.com/get-started/get-docker/"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Obter Docker ↗</a
+          ><span>O instalador oficial pode pedir permissão e reinicialização.</span>
+        </div>
+      </section>
+      <footer class="page-footer">
+        <span>Feito para compartilhar. Não para complicar.</span
+        ><a href="/DDP.md" target="_blank" rel="noopener noreferrer">DDP · guia local ↗</a>
+      </footer>
+      <noscript
+        >Ative JavaScript para usar o assistente local. Nenhum dado é enviado ao GitHub.</noscript
+      >
+    </main>
+  </body>
+</html>
